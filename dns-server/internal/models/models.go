@@ -46,3 +46,12 @@ type IPLog struct {
 	Action    string    `json:"action"`
 	CreatedAt time.Time `json:"created_at"`
 }
+
+type OTP struct {
+	ID        uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
+	OtpCode   string    `json:"otp_code"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Used      bool      `json:"used"`
+	CreatedAt time.Time `json:"created_at"`
+}

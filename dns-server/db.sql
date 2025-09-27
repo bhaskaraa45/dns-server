@@ -48,6 +48,16 @@ CREATE TABLE ip_logs (
     created_at TIMESTAMP DEFAULT NOW()
 );
 
+-- OTP TABLE
+CREATE TABLE otps (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email  VARCHAR(255) NOT NULL,
+    otp_code VARCHAR(10) NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
 -- ===============================
 -- INDEXES for performance
 -- ===============================

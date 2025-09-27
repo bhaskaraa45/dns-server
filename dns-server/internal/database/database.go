@@ -38,6 +38,11 @@ type Service interface {
 	// IP Logs
 	CreateIPLog(log *models.IPLog) error
 	GetIPLogsByUser(userID string) ([]models.IPLog, error)
+
+	// OTPs
+	InsertOTP(otp *models.OTP) error
+	GetOTPByCode(code string) (*models.OTP, error)
+	MarkOTPAsUsed(id string) error
 }
 
 type service struct {

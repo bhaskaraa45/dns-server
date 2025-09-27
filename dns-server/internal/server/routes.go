@@ -16,9 +16,14 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.GET("/", s.helloWorldHandler)
 
+	c := &controllers.Controllers{DB: s.db}
+
+	// OTP routes
+	r.POST("/send-otp", c.SendOtp)
+
 	// User routes
-	uc := &controllers.UsersController{DB: s.db}
-	r.POST("/users", uc.CreateUser)
+	r.POST("/users", c.SignUp)
+	r.GET("/me", c.GetUser)
 
 	return corsWrapper
 }
@@ -39,6 +44,13 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		
+		next.ServeHTTP(w, r)
+	})
+}
+
 func (s *Server) helloWorldHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	resp := make(map[string]string)
 	resp["message"] = "Hello World"
@@ -50,3 +62,4 @@ func (s *Server) helloWorldHandler(w http.ResponseWriter, r *http.Request, _ htt
 
 	_, _ = w.Write(jsonResp)
 }
+
