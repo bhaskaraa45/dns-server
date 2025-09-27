@@ -2,6 +2,7 @@ package database
 
 import (
 	"database/sql"
+	"dns-server/internal/models"
 	"fmt"
 	"log"
 	"os"
@@ -12,6 +13,31 @@ import (
 
 type Service interface {
 	Close() error
+
+	// Users
+	CreateUser(user *models.User) error
+	GetUserByID(id string) (*models.User, error)
+	GetUserByEmail(email string) (*models.User, error)
+	UpdateUser(user *models.User) error
+	DeleteUser(id string) error
+
+	// Domains
+	CreateDomain(domain *models.Domain) error
+	GetDomainByID(id string) (*models.Domain, error)
+	GetDomainsByUser(userID string) ([]models.Domain, error)
+	UpdateDomain(domain *models.Domain) error
+	DeleteDomain(id string) error
+
+	// Records
+	CreateRecord(record *models.Record) error
+	GetRecordByID(id string) (*models.Record, error)
+	GetRecordsByDomain(domainID string) ([]models.Record, error)
+	UpdateRecord(record *models.Record) error
+	DeleteRecord(id string) error
+
+	// IP Logs
+	CreateIPLog(log *models.IPLog) error
+	GetIPLogsByUser(userID string) ([]models.IPLog, error)
 }
 
 type service struct {
