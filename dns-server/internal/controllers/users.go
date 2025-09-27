@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"dns-server/internal/database"
+	"dns-server/internal/middleware"
 	"dns-server/internal/models"
 	"dns-server/internal/services"
 
@@ -96,41 +97,22 @@ func (uc *Controllers) SignUp(w http.ResponseWriter, r *http.Request, _ httprout
 	json.NewEncoder(w).Encode(resp)
 }
 
-// ====================
-// CREATE USER
-// POST /users
-// ====================
-// func (uc *Controllers) CreateUser(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-// 	var input struct {
-// 		Name     string `json:"name"`
-// 		Email    string `json:"email"`
-// 		Password string `json:"password"`
-// 	}
+// Get Me - GET /me
+func (uc *Controllers) GetMe(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	userID := middleware.GetUserID(r)
+	if userID == "" {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-// 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-// 		http.Error(w, "Invalid request body", http.StatusBadRequest)
-// 		return
-// 	}
+	user, err := uc.DB.GetUserByID(userID)
+	if err != nil {
+		http.Error(w, "User not found: "+err.Error(), http.StatusNotFound)
+		return
+	}
 
-// 	user := &models.User{
-// 		ID:           uuid.New(),
-// 		Name:         input.Name,
-// 		Email:        input.Email,
-// 		PasswordHash: HashPassword(input.Password),
-// 		UserAgent:    r.UserAgent(),
-// 		IP:           r.RemoteAddr,
-// 		CreatedAt:    time.Now(),
-// 		UpdatedAt:    time.Now(),
-// 	}
-
-// 	if err := uc.DB.CreateUser(user); err != nil {
-// 		http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
-// 		return
-// 	}
-
-// 	w.WriteHeader(http.StatusCreated)
-// 	json.NewEncoder(w).Encode(user)
-// }
+	json.NewEncoder(w).Encode(user)
+}
 
 // ====================
 // GET USER BY ID

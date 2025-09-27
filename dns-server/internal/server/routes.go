@@ -2,6 +2,7 @@ package server
 
 import (
 	"dns-server/internal/controllers"
+	"dns-server/internal/middleware"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -23,7 +24,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// User routes
 	r.POST("/users", c.SignUp)
-	r.GET("/me", c.GetUser)
+	r.GET("/me", middleware.AuthMiddleware(c.GetMe))
 
 	return corsWrapper
 }
@@ -44,13 +45,6 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func authMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		
-		next.ServeHTTP(w, r)
-	})
-}
-
 func (s *Server) helloWorldHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	resp := make(map[string]string)
 	resp["message"] = "Hello World"
@@ -62,4 +56,3 @@ func (s *Server) helloWorldHandler(w http.ResponseWriter, r *http.Request, _ htt
 
 	_, _ = w.Write(jsonResp)
 }
-

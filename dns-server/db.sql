@@ -1,4 +1,13 @@
 -- ===============================
+-- DROP TABLES (to reset schema)
+-- ===============================
+DROP TABLE IF EXISTS ip_logs CASCADE;
+DROP TABLE IF EXISTS otps CASCADE;
+DROP TABLE IF EXISTS records CASCADE;
+DROP TABLE IF EXISTS domains CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+-- ===============================
 -- Database Schema for DNS Server
 -- ===============================
 
@@ -9,7 +18,7 @@ CREATE TABLE users (
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     user_agent TEXT,
-    ip INET,
+    ip TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP DEFAULT NOW()
 );
@@ -43,7 +52,7 @@ CREATE TABLE records (
 CREATE TABLE ip_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    ip INET NOT NULL,
+    ip TEXT NOT NULL,
     action VARCHAR(100),
     created_at TIMESTAMP DEFAULT NOW()
 );
@@ -72,5 +81,5 @@ CREATE INDEX idx_records_lookup ON records(domain_id, name, type);
 CREATE INDEX idx_ip_logs_user ON ip_logs(user_id);
 CREATE INDEX idx_ip_logs_ip ON ip_logs(ip);
 
---  Fast lookups for users by email and id
+-- Fast lookups for users by email and id
 CREATE INDEX idx_users_email_id ON users(email, id);
