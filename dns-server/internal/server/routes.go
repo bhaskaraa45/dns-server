@@ -1,6 +1,7 @@
 package server
 
 import (
+	"dns-server/internal/controllers"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -13,7 +14,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	corsWrapper := s.corsMiddleware(r)
 
-	r.HandlerFunc(http.MethodGet, "/", s.HelloWorldHandler)
+	r.GET("/", s.helloWorldHandler)
+
+	// User routes
+	uc := &controllers.UsersController{DB: s.db}
+	r.POST("/users", uc.CreateUser)
 
 	return corsWrapper
 }
@@ -34,7 +39,7 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) helloWorldHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	resp := make(map[string]string)
 	resp["message"] = "Hello World"
 
