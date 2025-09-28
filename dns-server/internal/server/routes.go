@@ -30,6 +30,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// Domain
 	r.POST("/domains", mw.AuthMiddleware(c.RegisterDomain))
+	r.GET("/domains", mw.AuthMiddleware(c.GetUserDomains))
+	r.GET("/domains/:id", mw.AuthMiddleware(c.GetDomainByID))
+	r.DELETE("/domains/:id", mw.AuthMiddleware(c.DeleteDomain))
 
 	// auth
 	r.POST("/login", c.Login)

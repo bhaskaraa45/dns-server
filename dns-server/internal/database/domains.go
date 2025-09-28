@@ -1,20 +1,32 @@
 package database
 
-import "dns-server/internal/models"
+import (
+	"dns-server/internal/models"
 
-func (s *service) CreateDomain(domain *models.Domain) error {
+	"github.com/google/uuid"
+)
+
+func (s *service) CreateDomain(domain *models.Domain) (uuid.UUID, error) {
 	query := `
 		INSERT INTO domains (user_id, domain_name, verified, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5)
 		RETURNING id
 	`
-	return s.db.QueryRow(query,
+
+	var id uuid.UUID
+	err := s.db.QueryRow(query,
 		domain.UserID,
 		domain.DomainName,
 		domain.Verified,
 		domain.CreatedAt,
 		domain.UpdatedAt,
-	).Scan(&domain.ID)
+	).Scan(&id)
+
+	if err != nil {
+		return uuid.Nil, err
+	}
+
+	return id, nil
 }
 
 func (s *service) GetDomainByID(id string) (*models.Domain, error) {

@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	"github.com/google/uuid"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -23,7 +24,7 @@ type Service interface {
 	UpdateUserIPAndAgent(id string, ip string, agent string) error
 
 	// Domains
-	CreateDomain(domain *models.Domain) error
+	CreateDomain(domain *models.Domain) (uuid.UUID, error)
 	GetDomainByID(id string) (*models.Domain, error)
 	GetDomainsByUser(userID string) ([]models.Domain, error)
 	UpdateDomain(domain *models.Domain) error
