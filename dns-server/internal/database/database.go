@@ -37,7 +37,8 @@ type Service interface {
 	GetRecordsByDomain(domainID string) ([]models.Record, error)
 	UpdateRecord(record *models.Record) error
 	DeleteRecord(id string) error
-
+	GetRecordsByName(domain string, subdomain string) ([]models.Record, error)
+	
 	// IP Logs
 	CreateIPLog(log *models.IPLog) error
 	GetIPLogsByUser(userID string) ([]models.IPLog, error)

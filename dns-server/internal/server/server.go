@@ -10,24 +10,24 @@ import (
 	_ "github.com/joho/godotenv/autoload"
 
 	"dns-server/internal/database"
+	"dns-server/internal/dns"
 )
 
 type Server struct {
-	port int
-
-	db database.Service
+	port       int
+	db         database.Service
+	HTTPServer *http.Server
 }
 
-func NewServer() *http.Server {
+func NewServer() *Server {
 	port, _ := strconv.Atoi(os.Getenv("PORT"))
 	NewServer := &Server{
 		port: port,
-
-		db: database.New(),
+		db:   database.New(),
 	}
 
 	// Declare Server config
-	server := &http.Server{
+	NewServer.HTTPServer = &http.Server{
 		Addr:         fmt.Sprintf(":%d", NewServer.port),
 		Handler:      NewServer.RegisterRoutes(),
 		IdleTimeout:  time.Minute,
@@ -35,5 +35,9 @@ func NewServer() *http.Server {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	return server
+	return NewServer
+}
+
+func (s *Server) NewDNSServer() *dns.DNSServer {
+	return dns.NewDNSServer(s.db)
 }

@@ -35,6 +35,30 @@ func (s *service) GetRecordByID(id string) (*models.Record, error) {
 	return &record, nil
 }
 
+func (s *service) GetRecordsByName(domain string, subdomain string) ([]models.Record, error) {
+	query := `
+		SELECT r.id, r.domain_id, r.type, r.name, r.value, r.ttl, r.priority, r.parent_record_id, r.created_at, r.updated_at
+		FROM records r
+		JOIN domains d ON r.domain_id = d.id
+		WHERE d.domain_name=$1 AND r.name=$2`
+	rows, err := s.db.Query(query, domain, subdomain)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var records []models.Record
+	for rows.Next() {
+		var record models.Record
+		err := rows.Scan(&record.ID, &record.DomainID, &record.Type, &record.Name, &record.Value, &record.TTL, &record.Priority, &record.ParentRecordID, &record.CreatedAt, &record.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, record)
+	}
+	return records, nil
+}
+
 func (s *service) GetRecordByDetails(domainID string, recordType string, name string) (*models.Record, error) {
 	query := `SELECT id, domain_id, type, name, value, ttl, priority, parent_record_id, created_at, updated_at FROM records WHERE domain_id=$1 AND type=$2 AND name=$3`
 	row := s.db.QueryRow(query, domainID, recordType, name)

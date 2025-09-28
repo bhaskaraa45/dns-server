@@ -9,11 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"dns-server/internal/dns"
 	"dns-server/internal/server"
 )
 
-func gracefulShutdown(apiServer *http.Server, done chan bool) {
+func gracefulShutdown(apiServer *server.Server, done chan bool) {
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
@@ -23,7 +22,7 @@ func gracefulShutdown(apiServer *http.Server, done chan bool) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := apiServer.Shutdown(ctx); err != nil {
+	if err := apiServer.HTTPServer.Shutdown(ctx); err != nil {
 		log.Printf("Server forced to shutdown with error: %v", err)
 	}
 
@@ -40,9 +39,12 @@ func main() {
 
 	go gracefulShutdown(server, done)
 
-	go dns.StartDnsServer()
+	// Start DNS server in a separate goroutine
+	DNSServer := server.NewDNSServer()
 
-	err := server.ListenAndServe()
+	go DNSServer.StartDnsServer()
+
+	err := server.HTTPServer.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		panic(fmt.Sprintf("http server error: %s", err))
 	}
