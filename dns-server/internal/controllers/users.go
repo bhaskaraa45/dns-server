@@ -6,14 +6,12 @@ import (
 	"time"
 
 	"dns-server/internal/database"
-	"dns-server/internal/middleware"
 	"dns-server/internal/models"
 	"dns-server/internal/services"
 	"dns-server/internal/utils"
 
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
-	"golang.org/x/crypto/bcrypt"
 )
 
 // Controllers holds DB service
@@ -66,7 +64,7 @@ func (uc *Controllers) SignUp(w http.ResponseWriter, r *http.Request, _ httprout
 		ID:           uuid.New(),
 		Name:         input.Name,
 		Email:        input.Email,
-		PasswordHash: HashPassword(input.Password),
+		PasswordHash: services.HashPassword(input.Password),
 		UserAgent:    r.UserAgent(),
 		IP:           r.RemoteAddr,
 		CreatedAt:    time.Now(),
@@ -85,15 +83,7 @@ func (uc *Controllers) SignUp(w http.ResponseWriter, r *http.Request, _ httprout
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session",
-		Value:    token,
-		Path:     "/",
-		HttpOnly: true,
-		Expires:  time.Now().Add(30 * 24 * time.Hour),
-		Domain:   r.Host,
-	})
-
+	utils.SetCookie(w, r, token)
 	utils.Created(w, "User created successfully", map[string]interface{}{
 		"id":         user.ID,
 		"name":       user.Name,
@@ -104,7 +94,7 @@ func (uc *Controllers) SignUp(w http.ResponseWriter, r *http.Request, _ httprout
 
 // Get Me - GET /me
 func (uc *Controllers) GetMe(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	userID := middleware.GetUserID(r)
+	userID := utils.GetUserID(r)
 	if userID == "" {
 		utils.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
@@ -184,7 +174,7 @@ func (uc *Controllers) UpdateUser(w http.ResponseWriter, r *http.Request, ps htt
 		user.Email = *input.Email
 	}
 	if input.Password != nil {
-		user.PasswordHash = HashPassword(*input.Password)
+		user.PasswordHash = services.HashPassword(*input.Password)
 	}
 	user.UpdatedAt = time.Now()
 
@@ -213,9 +203,4 @@ func (uc *Controllers) DeleteUser(w http.ResponseWriter, r *http.Request, ps htt
 	}
 
 	w.WriteHeader(http.StatusNoContent)
-}
-
-func HashPassword(password string) string {
-	hash, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	return string(hash)
 }

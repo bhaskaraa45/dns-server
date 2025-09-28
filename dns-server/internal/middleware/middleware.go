@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"dns-server/internal/constants"
 	"dns-server/internal/database"
 	"dns-server/internal/models"
 	"dns-server/internal/services"
@@ -13,11 +14,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 )
 
-var jwtSecret = []byte("secret_key")
-
 type contextKey string
-
-const userIDKey contextKey = "userID"
 
 type Middleware struct {
 	DB database.Service
@@ -41,20 +38,14 @@ func (m *Middleware) AuthMiddleware(routerHandle httprouter.Handle) httprouter.H
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userIDKey, claims.Subject)
+		ctx := context.WithValue(r.Context(), constants.UserContextKey, claims.Subject)
 
+		utils.RefreshCookie(w, r, claims.Subject)
+		
 		routerHandle(w, r.WithContext(ctx), ps)
 
 		go m.TrackUserActivity(claims.Subject, r.Method+" "+r.URL.Path, r.RemoteAddr, r.UserAgent())
 	}
-}
-
-// GetUserID helper
-func GetUserID(r *http.Request) string {
-	if uid, ok := r.Context().Value(userIDKey).(string); ok {
-		return uid
-	}
-	return ""
 }
 
 func (m *Middleware) TrackUserActivity(userID string, activity string, ip string, agent string) {

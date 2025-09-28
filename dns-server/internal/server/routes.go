@@ -26,6 +26,14 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// User routes
 	r.POST("/users", c.SignUp)
 	r.GET("/me", mw.AuthMiddleware(c.GetMe))
+	r.POST("/reset-password", c.ResetPassword)
+
+	// Domain
+	r.POST("/domains", mw.AuthMiddleware(c.RegisterDomain))
+
+	// auth
+	r.POST("/login", c.Login)
+	r.POST("/logout", c.Logout)
 
 	return corsWrapper
 }
