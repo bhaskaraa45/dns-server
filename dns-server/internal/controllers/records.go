@@ -13,7 +13,6 @@ import (
 
 func (c *Controllers) RegisterDNSRecord(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	var input struct {
-		DomainName string `json:"domain_name"`
 		DomainId   string `json:"domain_id"`
 		Type       string `json:"type"`
 		Name       string `json:"name"`

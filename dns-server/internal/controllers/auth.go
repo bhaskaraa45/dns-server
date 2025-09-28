@@ -38,10 +38,14 @@ func (c *Controllers) Login(w http.ResponseWriter, r *http.Request, _ httprouter
 	// set token in cookie
 	utils.SetCookie(w, r, token)
 
-	utils.Success(w, "Login successful", map[string]interface{}{
+	u := map[string]interface{}{
 		"id":    user.ID,
 		"name":  user.Name,
 		"email": user.Email,
+	}
+
+	utils.Success(w, "Login successful", map[string]interface{}{
+		"user":  u,
 	})
 }
 

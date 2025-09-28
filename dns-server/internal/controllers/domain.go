@@ -4,6 +4,7 @@ import (
 	"dns-server/internal/models"
 	"dns-server/internal/utils"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -67,6 +68,10 @@ func (c *Controllers) GetUserDomains(w http.ResponseWriter, r *http.Request, ps 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	if domains == nil || len(domains) == 0 {
+		json.NewEncoder(w).Encode([]interface{}{}) 
+		return
+	}
 	json.NewEncoder(w).Encode(domains)
 }
 
@@ -164,7 +169,8 @@ func (c *Controllers) GetDNSRecordsByDomain(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 
 	if records == nil || len(records) == 0 {
-		w.WriteHeader(http.StatusNoContent)
+		fmt.Println("NO records found")
+		json.NewEncoder(w).Encode([]interface{}{}) 
 		return
 	}
 

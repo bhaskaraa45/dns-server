@@ -25,6 +25,8 @@ func (s *DNSServer) handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 	m.Authoritative = true
 
+	fmt.Println("HANDLE DNS REQUEST")
+
 	for _, q := range r.Question {
 		name := q.Name
 		if name[len(name)-1] == '.' {

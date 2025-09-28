@@ -71,7 +71,12 @@ func (s *service) GetRecordByDetails(domainID string, recordType string, name st
 }
 
 func (s *service) GetRecordsByDomain(domainID string) ([]models.Record, error) {
-	query := `SELECT id, domain_id, type, name, value, ttl, priority, parent_record_id, created_at, updated_at FROM records WHERE domain_id=$1`
+	query := `
+		SELECT r.id, r.domain_id, r.type, r.name, r.value, r.ttl, r.priority, r.parent_record_id, r.created_at, r.updated_at, d.domain_name
+		FROM records r
+		JOIN domains d 
+		ON d.id = r.domain_id
+		WHERE d.id=$1`
 	rows, err := s.db.Query(query, domainID)
 	if err != nil {
 		return nil, err
@@ -81,7 +86,7 @@ func (s *service) GetRecordsByDomain(domainID string) ([]models.Record, error) {
 	var records []models.Record
 	for rows.Next() {
 		var record models.Record
-		err := rows.Scan(&record.ID, &record.DomainID, &record.Type, &record.Name, &record.Value, &record.TTL, &record.Priority, &record.ParentRecordID, &record.CreatedAt, &record.UpdatedAt)
+		err := rows.Scan(&record.ID, &record.DomainID, &record.Type, &record.Name, &record.Value, &record.TTL, &record.Priority, &record.ParentRecordID, &record.CreatedAt, &record.UpdatedAt, &record.DomainName)
 		if err != nil {
 			return nil, err
 		}

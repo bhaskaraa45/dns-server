@@ -29,6 +29,7 @@ type Domain struct {
 type Record struct {
 	ID             uuid.UUID  `json:"id"`
 	DomainID       uuid.UUID  `json:"domain_id"`
+	DomainName     string     "json:domain_name,omitempty"
 	Type           string     `json:"type"` // A, AAAA, CNAME, MX, etc.
 	Name           string     `json:"name"` // subdomain
 	Value          string     `json:"value"`
