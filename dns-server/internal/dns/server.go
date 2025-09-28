@@ -23,6 +23,8 @@ func (s *DNSServer) handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 	m := new(dns.Msg)
 	m.SetReply(r)
 
+	m.Authoritative = true
+
 	for _, q := range r.Question {
 		name := q.Name
 		if name[len(name)-1] == '.' {
@@ -72,6 +74,16 @@ func (s *DNSServer) handleDNSRequest(w dns.ResponseWriter, r *dns.Msg) {
 
 			if rr != nil {
 				m.Answer = append(m.Answer, rr)
+			}
+		}
+
+		nsRecords, err := s.db.GetRecordsByName(domain, "@") // "@" = root of domain
+		if err == nil {
+			for _, r := range nsRecords {
+				if r.Type == "NS" {
+					nsRR, _ := dns.NewRR(fmt.Sprintf("%s %d IN NS %s", domain+".", 3600, r.Value))
+					m.Ns = append(m.Ns, nsRR)
+				}
 			}
 		}
 	}
