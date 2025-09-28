@@ -17,6 +17,7 @@ import (
 // Controllers holds DB service
 type Controllers struct {
 	DB database.Service
+	services.SmtpService
 }
 
 func (uc *Controllers) SignUp(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {

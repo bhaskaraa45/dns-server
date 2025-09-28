@@ -17,7 +17,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	r.GET("/", s.helloWorldHandler)
 
-	c := &controllers.Controllers{DB: s.db}
+	c := &controllers.Controllers{DB: s.db, SmtpService: *s.SmtpService}
 	mw := &middleware.Middleware{DB: s.db}
 
 	// OTP routes

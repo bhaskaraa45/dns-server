@@ -11,12 +11,14 @@ import (
 
 	"dns-server/internal/database"
 	"dns-server/internal/dns"
+	"dns-server/internal/services"
 )
 
 type Server struct {
-	port       int
-	db         database.Service
-	HTTPServer *http.Server
+	port        int
+	db          database.Service
+	HTTPServer  *http.Server
+	SmtpService *services.SmtpService
 }
 
 func NewServer() *Server {
@@ -24,6 +26,7 @@ func NewServer() *Server {
 	NewServer := &Server{
 		port: port,
 		db:   database.New(),
+		SmtpService: services.InitSMTP(),
 	}
 
 	// Declare Server config
