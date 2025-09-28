@@ -17,3 +17,15 @@ func GenerateJWTToken(userId string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString(jwtSecret)
 }
+
+func ValidateJWTToken(tokenString string) (*jwt.StandardClaims, error) {
+	claims := &jwt.StandardClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return jwtSecret, nil
+	})
+	
+	if err != nil || !token.Valid {
+		return nil, err
+	}
+	return claims, nil
+}

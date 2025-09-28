@@ -2,42 +2,50 @@ package middleware
 
 import (
 	"context"
+	"dns-server/internal/database"
+	"dns-server/internal/models"
+	"dns-server/internal/services"
+	"dns-server/internal/utils"
 	"net/http"
+	"time"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
-var jwtSecret = []byte("your_secret_key")
+var jwtSecret = []byte("secret_key")
 
 type contextKey string
 
 const userIDKey contextKey = "userID"
 
+type Middleware struct {
+	DB database.Service
+}
+
 // Middleware for httprouter.Handle
-func AuthMiddleware(routerHandle httprouter.Handle) httprouter.Handle {
+func (m *Middleware) AuthMiddleware(routerHandle httprouter.Handle) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		cookie, err := r.Cookie("token")
+		cookie, err := r.Cookie("session")
 		if err != nil {
-			http.Error(w, "Missing auth cookie", http.StatusUnauthorized)
+			utils.Error(w, http.StatusUnauthorized, "Missing auth cookie")
 			return
 		}
 
 		tokenString := cookie.Value
 
-		claims := &jwt.StandardClaims{}
-		token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
-			return jwtSecret, nil
-		})
+		claims, err := services.ValidateJWTToken(tokenString)
 
-		if err != nil || !token.Valid {
-			http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
+		if err != nil {
+			utils.Error(w, http.StatusUnauthorized, "Invalid or expired token")
 			return
 		}
 
 		ctx := context.WithValue(r.Context(), userIDKey, claims.Subject)
 
 		routerHandle(w, r.WithContext(ctx), ps)
+
+		go m.TrackUserActivity(claims.Subject, r.Method+" "+r.URL.Path, r.RemoteAddr, r.UserAgent())
 	}
 }
 
@@ -47,4 +55,21 @@ func GetUserID(r *http.Request) string {
 		return uid
 	}
 	return ""
+}
+
+func (m *Middleware) TrackUserActivity(userID string, activity string, ip string, agent string) {
+	_ = m.DB.UpdateUserIPAndAgent(userID, ip, agent)
+
+	uuid, err := uuid.Parse(userID)
+	if err != nil {
+		return
+	}
+
+	log := &models.IPLog{
+		UserID:    uuid,
+		IP:        ip,
+		Action:    activity,
+		CreatedAt: time.Now(),
+	}
+	_ = m.DB.CreateIPLog(log)
 }

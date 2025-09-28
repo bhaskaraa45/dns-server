@@ -9,6 +9,7 @@ import (
 	"dns-server/internal/middleware"
 	"dns-server/internal/models"
 	"dns-server/internal/services"
+	"dns-server/internal/utils"
 
 	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
@@ -29,29 +30,35 @@ func (uc *Controllers) SignUp(w http.ResponseWriter, r *http.Request, _ httprout
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		utils.Error(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	// Validate OTP here (omitted for brevity)
 	otp, err := uc.DB.GetOTPByCode(input.Otp)
 	if err != nil || otp == nil {
-		http.Error(w, "Invalid OTP", http.StatusBadRequest)
+		utils.Error(w, http.StatusBadRequest, "Invalid OTP")
 		return
 	}
 
 	if otp.Used || time.Now().After(otp.ExpiresAt) {
-		http.Error(w, "Expired OTP", http.StatusBadRequest)
+		utils.Error(w, http.StatusBadRequest, "Expired OTP")
 		return
 	}
 
 	if otp.Email != input.Email {
-		http.Error(w, "Invalid OTP", http.StatusBadRequest)
+		utils.Error(w, http.StatusBadRequest, "OTP does not match email")
 		return
 	}
 
 	if err := uc.DB.MarkOTPAsUsed(input.Otp); err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		utils.Error(w, http.StatusInternalServerError, "Internal Server Error")
+		return
+	}
+
+	// Check if user already exists
+	existingUser, _ := uc.DB.GetUserByEmail(input.Email)
+	if existingUser != nil {
+		utils.Error(w, http.StatusConflict, "User with this email already exists")
 		return
 	}
 
@@ -65,53 +72,61 @@ func (uc *Controllers) SignUp(w http.ResponseWriter, r *http.Request, _ httprout
 		CreatedAt:    time.Now(),
 		UpdatedAt:    time.Now(),
 	}
+
 	if err := uc.DB.CreateUser(user); err != nil {
-		http.Error(w, "Failed to create user: "+err.Error(), http.StatusInternalServerError)
+		utils.Error(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
-	resp := make(map[string]interface{})
-	resp["id"] = user.ID
-	resp["name"] = user.Name
-	resp["email"] = user.Email
-	resp["created_at"] = user.CreatedAt
-	resp["message"] = "User created successfully"
-
-	// create JWT token and send as cookie
-	t, err := services.GenerateJWTToken(user.ID.String())
+	// Generate JWT token
+	token, err := services.GenerateJWTToken(user.ID.String())
 	if err != nil {
-		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		utils.Error(w, http.StatusInternalServerError, "Internal Server Error")
 		return
 	}
 
 	http.SetCookie(w, &http.Cookie{
 		Name:     "session",
-		Value:    t,
+		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
 		Expires:  time.Now().Add(30 * 24 * time.Hour),
 		Domain:   r.Host,
 	})
 
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(resp)
+	utils.Created(w, "User created successfully", map[string]interface{}{
+		"id":         user.ID,
+		"name":       user.Name,
+		"email":      user.Email,
+		"created_at": user.CreatedAt,
+	})
 }
 
 // Get Me - GET /me
 func (uc *Controllers) GetMe(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	userID := middleware.GetUserID(r)
 	if userID == "" {
-		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		utils.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
 	user, err := uc.DB.GetUserByID(userID)
 	if err != nil {
-		http.Error(w, "User not found: "+err.Error(), http.StatusNotFound)
+		utils.Error(w, http.StatusNotFound, "User not found")
 		return
 	}
+	u := struct {
+		ID    uuid.UUID `json:"id"`
+		Name  string    `json:"name"`
+		Email string    `json:"email"`
+	}{
+		ID:    user.ID,
+		Name:  user.Name,
+		Email: user.Email,
+	}
 
-	json.NewEncoder(w).Encode(user)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(u)
 }
 
 // ====================

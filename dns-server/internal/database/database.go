@@ -20,6 +20,7 @@ type Service interface {
 	GetUserByEmail(email string) (*models.User, error)
 	UpdateUser(user *models.User) error
 	DeleteUser(id string) error
+	UpdateUserIPAndAgent(id string, ip string, agent string) error
 
 	// Domains
 	CreateDomain(domain *models.Domain) error

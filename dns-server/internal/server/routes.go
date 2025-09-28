@@ -18,13 +18,14 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.GET("/", s.helloWorldHandler)
 
 	c := &controllers.Controllers{DB: s.db}
+	mw := &middleware.Middleware{DB: s.db}
 
 	// OTP routes
 	r.POST("/send-otp", c.SendOtp)
 
 	// User routes
 	r.POST("/users", c.SignUp)
-	r.GET("/me", middleware.AuthMiddleware(c.GetMe))
+	r.GET("/me", mw.AuthMiddleware(c.GetMe))
 
 	return corsWrapper
 }

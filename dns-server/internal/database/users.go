@@ -1,6 +1,9 @@
 package database
 
-import "dns-server/internal/models"
+import (
+	"dns-server/internal/models"
+	"time"
+)
 
 func (s *service) CreateUser(user *models.User) error {
 	query := `
@@ -57,5 +60,14 @@ func (s *service) UpdateUser(user *models.User) error {
 
 func (s *service) DeleteUser(id string) error {
 	_, err := s.db.Exec(`DELETE FROM users WHERE id=$1`, id)
+	return err
+}
+
+func (s *service) UpdateUserIPAndAgent(userID string, ip, userAgent string) error {
+	query := `UPDATE users 
+	          SET ip=$1, user_agent=$2, updated_at=$3 
+	          WHERE id=$4`
+
+	_, err := s.db.Exec(query, ip, userAgent, time.Now(), userID)
 	return err
 }
