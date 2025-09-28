@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/julienschmidt/httprouter"
 )
 
@@ -65,12 +66,12 @@ func (c *Controllers) ResetPassword(w http.ResponseWriter, r *http.Request, _ ht
 	// if old password is provided, verify it
 	if input.Password != "" {
 		userID := utils.GetUserID(r)
-		if userID == "" {
+		if userID == uuid.Nil {
 			utils.Error(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
-		user, err := c.DB.GetUserByID(userID)
+		user, err := c.DB.GetUserByID(userID.String())
 		if err != nil || user == nil || !services.CheckPasswordHash(input.Password, user.PasswordHash) {
 			utils.Error(w, http.StatusUnauthorized, "Invalid current password")
 			return

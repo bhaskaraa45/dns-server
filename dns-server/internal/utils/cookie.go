@@ -5,6 +5,8 @@ import (
 	"dns-server/internal/services"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 func SetCookie(w http.ResponseWriter, r *http.Request, value string) {
@@ -19,11 +21,15 @@ func SetCookie(w http.ResponseWriter, r *http.Request, value string) {
 }
 
 // GetUserID helper
-func GetUserID(r *http.Request) string {
+func GetUserID(r *http.Request) uuid.UUID {
 	if uid, ok := r.Context().Value(constants.UserContextKey).(string); ok {
-		return uid
+		parsedUUID, err := uuid.Parse(uid)
+		if err == nil {
+			return parsedUUID
+		}
+		return uuid.Nil
 	}
-	return ""
+	return uuid.Nil
 }
 
 // Refresh Cookie
@@ -38,11 +44,10 @@ func RefreshCookie(w http.ResponseWriter, r *http.Request, userId string) error 
 
 func ClearCookie(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
-		Name:   "session",
-		Value:  "",
-		Path:   "/",
+		Name:    "session",
+		Value:   "",
+		Path:    "/",
 		Expires: time.Unix(0, 0),
-		Domain: r.Host,
+		Domain:  r.Host,
 	})
 }
-

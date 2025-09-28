@@ -95,12 +95,12 @@ func (uc *Controllers) SignUp(w http.ResponseWriter, r *http.Request, _ httprout
 // Get Me - GET /me
 func (uc *Controllers) GetMe(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	userID := utils.GetUserID(r)
-	if userID == "" {
+	if userID == uuid.Nil {
 		utils.Error(w, http.StatusUnauthorized, "Unauthorized")
 		return
 	}
 
-	user, err := uc.DB.GetUserByID(userID)
+	user, err := uc.DB.GetUserByID(userID.String())
 	if err != nil {
 		utils.Error(w, http.StatusNotFound, "User not found")
 		return
