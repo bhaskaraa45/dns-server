@@ -453,6 +453,7 @@ const RecordsPage = ({ gUser, setGUser }) => {
   }, [domainId]);
 
   useEffect(() => {
+    console.log("RECORDS ", records)
     const filtered = records.filter(record => 
       record.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       record.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
