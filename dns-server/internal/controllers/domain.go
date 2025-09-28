@@ -65,8 +65,9 @@ func (c *Controllers) GetUserDomains(w http.ResponseWriter, r *http.Request, ps 
 		utils.Error(w, http.StatusInternalServerError, "Failed to fetch domains")
 		return
 	}
-	
-	utils.Success(w, "Domains fetched successfully", domains)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(domains)
 }
 
 func (c *Controllers) GetDomainByID(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -75,17 +76,17 @@ func (c *Controllers) GetDomainByID(w http.ResponseWriter, r *http.Request, ps h
 		utils.Error(w, http.StatusBadRequest, "Domain ID is required")
 		return
 	}
-	
+
 	domain, err := c.DB.GetDomainByID(domainID)
 	if err != nil {
-		utils.Error(w, http.StatusInternalServerError, "Failed to fetch domain")
+		utils.Error(w, http.StatusBadRequest, "Domain not found")
 		return
 	}
 	if domain == nil {
 		utils.Error(w, http.StatusNotFound, "Domain not found")
 		return
 	}
-	
+
 	userID := utils.GetUserID(r)
 	if userID == uuid.Nil {
 		utils.Error(w, http.StatusUnauthorized, "Unauthorized")
@@ -95,8 +96,9 @@ func (c *Controllers) GetDomainByID(w http.ResponseWriter, r *http.Request, ps h
 		utils.Error(w, http.StatusForbidden, "Forbidden")
 		return
 	}
-	
-	utils.Success(w, "Domain fetched successfully", domain)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(domain)
 }
 
 func (c *Controllers) DeleteDomain(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
@@ -105,7 +107,7 @@ func (c *Controllers) DeleteDomain(w http.ResponseWriter, r *http.Request, ps ht
 		utils.Error(w, http.StatusBadRequest, "Domain ID is required")
 		return
 	}
-	
+
 	domain, err := c.DB.GetDomainByID(domainID)
 	if err != nil {
 		utils.Error(w, http.StatusInternalServerError, "Failed to fetch domain")
@@ -115,7 +117,7 @@ func (c *Controllers) DeleteDomain(w http.ResponseWriter, r *http.Request, ps ht
 		utils.Error(w, http.StatusNotFound, "Domain not found")
 		return
 	}
-	
+
 	userID := utils.GetUserID(r)
 	if userID == uuid.Nil {
 		utils.Error(w, http.StatusUnauthorized, "Unauthorized")
@@ -125,11 +127,46 @@ func (c *Controllers) DeleteDomain(w http.ResponseWriter, r *http.Request, ps ht
 		utils.Error(w, http.StatusForbidden, "Forbidden")
 		return
 	}
-	
+
 	if err := c.DB.DeleteDomain(domainID); err != nil {
 		utils.Error(w, http.StatusInternalServerError, "Failed to delete domain")
 		return
 	}
-	
+
 	utils.Success(w, "Domain deleted successfully", nil)
+}
+
+func (c *Controllers) GetDNSRecordsByDomain(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	domainID := ps.ByName("id")
+
+	if domainID == "" {
+		http.Error(w, "Domain ID is required", http.StatusBadRequest)
+		return
+	}
+	// check domain existence and ownership
+	domain, err := c.DB.GetDomainByID(domainID)
+	if err != nil || domain == nil {
+		http.Error(w, "Domain not found", http.StatusNotFound)
+		return
+	}
+
+	if domain.UserID == uuid.Nil || domain.UserID != utils.GetUserID(r) {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	records, err := c.DB.GetRecordsByDomain(domainID)
+	if err != nil {
+		http.Error(w, "Failed to fetch records", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if records == nil || len(records) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	json.NewEncoder(w).Encode(records)
 }

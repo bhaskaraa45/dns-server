@@ -1,6 +1,9 @@
 package database
 
-import "dns-server/internal/models"
+import (
+	"dns-server/internal/models"
+	"fmt"
+)
 
 func (s *service) CreateRecord(record *models.Record) error {
 	query := `
@@ -32,6 +35,17 @@ func (s *service) GetRecordByID(id string) (*models.Record, error) {
 	return &record, nil
 }
 
+func (s *service) GetRecordByDetails(domainID string, recordType string, name string) (*models.Record, error) {
+	query := `SELECT id, domain_id, type, name, value, ttl, priority, parent_record_id, created_at, updated_at FROM records WHERE domain_id=$1 AND type=$2 AND name=$3`
+	row := s.db.QueryRow(query, domainID, recordType, name)
+	var record models.Record
+	err := row.Scan(&record.ID, &record.DomainID, &record.Type, &record.Name, &record.Value, &record.TTL, &record.Priority, &record.ParentRecordID, &record.CreatedAt, &record.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+	return &record, nil
+}
+
 func (s *service) GetRecordsByDomain(domainID string) ([]models.Record, error) {
 	query := `SELECT id, domain_id, type, name, value, ttl, priority, parent_record_id, created_at, updated_at FROM records WHERE domain_id=$1`
 	rows, err := s.db.Query(query, domainID)
@@ -53,6 +67,7 @@ func (s *service) GetRecordsByDomain(domainID string) ([]models.Record, error) {
 }
 
 func (s *service) UpdateRecord(record *models.Record) error {
+	fmt.Println("Updating record:", record)
 	query := `UPDATE records SET type=$1, name=$2, value=$3, ttl=$4, priority=$5, parent_record_id=$6, updated_at=$7 WHERE id=$8`
 	_, err := s.db.Exec(query,
 		record.Type,

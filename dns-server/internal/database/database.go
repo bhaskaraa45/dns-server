@@ -33,6 +33,7 @@ type Service interface {
 	// Records
 	CreateRecord(record *models.Record) error
 	GetRecordByID(id string) (*models.Record, error)
+	GetRecordByDetails(domainID string, recordType string, name string) (*models.Record, error)
 	GetRecordsByDomain(domainID string) ([]models.Record, error)
 	UpdateRecord(record *models.Record) error
 	DeleteRecord(id string) error
